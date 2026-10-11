@@ -308,10 +308,10 @@ export function Report({ code, partnerId }: { code: string; partnerId: string })
             title={t.report.shareInstagram}
             className="size-12 rounded-full border-love-300 bg-love-100 p-0 text-love-700 hover:bg-love-200 hover:text-love-800"
           >
-            <svg viewBox="0 0 24 24" aria-hidden="true" className="size-6" fill="none" stroke="#881337" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" className="block shrink-0" fill="none" stroke="var(--color-love-800)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="3" width="18" height="18" rx="5" />
               <circle cx="12" cy="12" r="4" />
-              <circle cx="17.5" cy="6.5" r="1" fill="#881337" stroke="none" />
+              <circle cx="17.5" cy="6.5" r="1" fill="var(--color-love-800)" stroke="none" />
             </svg>
           </Button>
         </div>
