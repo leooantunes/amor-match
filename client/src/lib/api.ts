@@ -1,5 +1,5 @@
 import { t } from '../content/texts'
-import type { Answer, Category, Question, Report, SessionView } from './types'
+import type { Answer, Category, DonationConfirmation, Question, Report, SessionView } from './types'
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -30,4 +30,6 @@ export const api = {
   answer: (code: string, partnerId: string, body: { questionId: string } & Answer) =>
     request<{ ok: true }>(`/sessions/${code}/answers`, { method: 'PUT', body, partnerId }),
   report: (code: string, partnerId: string) => request<Report>(`/sessions/${code}/report`, { partnerId }),
+  confirmPremiumDonation: (code: string, partnerId: string) =>
+    request<DonationConfirmation>(`/sessions/${code}/premium/confirm-donation`, { method: 'POST', partnerId }),
 }

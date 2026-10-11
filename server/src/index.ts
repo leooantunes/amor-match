@@ -1,11 +1,25 @@
+import 'dotenv/config'
 import cors from 'cors'
 import express, { type NextFunction, type Request, type Response } from 'express'
+import { fileURLToPath } from 'node:url'
+import path from 'node:path'
 import { z } from 'zod'
 import { categories, questionById, questions } from './questions.js'
-import { buildReport } from './report.js'
-import { addPartner, createSession, getSession, persist, type Partner, type Session } from './store.js'
+import { buildPremiumAnalysis, buildReport } from './report.js'
+import { getPixDonationDetails, PREMIUM_DONATION_CENTS } from './pix.js'
+import {
+  addPartner,
+  checkStore,
+  createSession,
+  getSession,
+  initStore,
+  persist,
+  type Partner,
+  type Session,
+} from './store.js'
 
 const app = express()
+const clientDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../client/dist')
 app.use(cors())
 app.use(express.json({ limit: '10kb' }))
 
@@ -42,23 +56,36 @@ function partnerFrom(req: Request, session: Session): Partner {
   return partner
 }
 
+function asyncRoute(handler: (req: Request, res: Response) => Promise<unknown>) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    void handler(req, res).catch(next)
+  }
+}
+
 app.get('/api/questions', (_req, res) => {
   res.json({ categories, questions })
 })
 
-app.post('/api/sessions', (req, res) => {
+app.get('/api/health', asyncRoute(async (_req, res) => {
+  await checkStore()
+  return res.json({ status: 'ok' })
+}))
+
+app.post('/api/sessions', asyncRoute(async (req, res) => {
   const { name } = nameSchema.parse(req.body)
   const { session, partner } = createSession(name)
+  await persist(session)
   res.status(201).json({ code: session.code, partnerId: partner.id })
-})
+}))
 
-app.post('/api/sessions/:code/join', (req, res) => {
+app.post('/api/sessions/:code/join', asyncRoute(async (req, res) => {
   const { name } = nameSchema.parse(req.body)
   const session = sessionFrom(req)
   if (session.partners.length >= 2) throw new HttpError(409, 'Esta sala já tem duas pessoas.')
   const partner = addPartner(session, name)
+  await persist(session)
   res.status(201).json({ code: session.code, partnerId: partner.id })
-})
+}))
 
 app.get('/api/sessions/:code', (req, res) => {
   const session = sessionFrom(req)
@@ -75,7 +102,7 @@ app.get('/api/sessions/:code', (req, res) => {
   })
 })
 
-app.put('/api/sessions/:code/answers', (req, res) => {
+app.put('/api/sessions/:code/answers', asyncRoute(async (req, res) => {
   const session = sessionFrom(req)
   const me = partnerFrom(req, session)
   const body = answerSchema.parse(req.body)
@@ -83,9 +110,9 @@ app.put('/api/sessions/:code/answers', (req, res) => {
   if (!question) throw new HttpError(400, 'Pergunta inválida.')
   if (question.guess && body.guess === undefined) throw new HttpError(400, 'Informe também o palpite.')
   me.answers[question.id] = question.guess ? { value: body.value, guess: body.guess } : { value: body.value }
-  persist()
+  await persist(session)
   res.json({ ok: true })
-})
+}))
 
 app.get('/api/sessions/:code/report', (req, res) => {
   const session = sessionFrom(req)
@@ -93,7 +120,46 @@ app.get('/api/sessions/:code/report', (req, res) => {
   if (session.partners.length < 2 || !session.partners.every(isFinished)) {
     throw new HttpError(409, 'O relatório fica pronto quando os dois terminarem.')
   }
-  res.json(buildReport(session.partners[0], session.partners[1]))
+  const report = buildReport(session.partners[0], session.partners[1])
+  const premiumUnlocked =
+    session.premiumDonation?.status === 'confirmed' || session.premiumPayment?.status === 'paid'
+  const pixDonation = getPixDonationDetails()
+  res.json({
+    ...report,
+    premium: {
+      status: premiumUnlocked ? 'donation_confirmed' : 'not_started',
+      pixConfigured: !!pixDonation,
+      pixKey: pixDonation?.key ?? null,
+      pixCopyPaste: pixDonation?.copyPaste ?? null,
+      donationCents: PREMIUM_DONATION_CENTS,
+      ...(premiumUnlocked ? { analysis: buildPremiumAnalysis(report) } : {}),
+    },
+  })
+})
+
+app.post('/api/sessions/:code/premium/confirm-donation', asyncRoute(async (req, res) => {
+  const session = sessionFrom(req)
+  const partner = partnerFrom(req, session)
+  if (session.partners.length < 2 || !session.partners.every(isFinished)) {
+    throw new HttpError(409, 'A análise Premium fica disponível quando os dois terminarem.')
+  }
+
+  if (!getPixDonationDetails()) {
+    throw new HttpError(503, 'A chave Pix para contribuição ainda não foi configurada.')
+  }
+
+  session.premiumDonation = {
+    status: 'confirmed',
+    confirmedByPartnerId: partner.id,
+    confirmedAt: Date.now(),
+  }
+  await persist(session)
+  return res.json({ confirmed: true })
+}))
+
+app.use(express.static(clientDist))
+app.get(/^(?!\/api\/).*/, (_req, res) => {
+  res.sendFile(path.join(clientDist, 'index.html'))
 })
 
 app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
@@ -105,4 +171,11 @@ app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
 })
 
 const port = Number(process.env.PORT ?? 3001)
-app.listen(port, () => console.log(`API rodando em http://localhost:${port}`))
+void initStore()
+  .then(() => {
+    app.listen(port, () => console.log(`API rodando em http://localhost:${port}`))
+  })
+  .catch((error: unknown) => {
+    console.error('Falha ao inicializar persistência da aplicação:', error)
+    process.exitCode = 1
+  })

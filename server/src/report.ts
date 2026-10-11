@@ -13,6 +13,12 @@ export interface QuestionInsight {
   answers: { name: string; value: number }[]
 }
 
+export interface PremiumAnalysis {
+  conversationGuide: { category: string; prompt: string }[]
+  dateIdeas: { title: string; description: string }[]
+  connectionChallenge: string
+}
+
 export interface Report {
   names: [string, string]
   overall: number
@@ -24,6 +30,7 @@ export interface Report {
   categories: CategoryResult[]
   strengths: QuestionInsight[]
   attention: QuestionInsight[]
+  premiumAnalysis?: PremiumAnalysis
 }
 
 const RANGE = SCALE_MAX - SCALE_MIN
@@ -58,6 +65,33 @@ const categoryTexts: Record<CategoryId, { high: string; mid: string; low: string
     high: 'Vocês sonham na mesma direção, e isso é um ótimo indício de longevidade.',
     mid: 'Os planos têm pontos em comum e alguns ajustes pela frente. Revisitem as metas juntos com frequência.',
     low: 'Seus planos de futuro divergem em pontos centrais. Falem abertamente sobre expectativas antes de grandes passos.',
+  },
+}
+
+const premiumGuidance: Record<CategoryId, { prompt: string; date: { title: string; description: string } }> = {
+  comunicacao: {
+    prompt: 'O que ajuda cada um a se sentir ouvido quando um assunto fica difícil?',
+    date: { title: 'Caminhada sem distrações', description: 'Façam uma caminhada tranquila e reservem um tempo para cada pessoa falar sem interrupções.' },
+  },
+  valores: {
+    prompt: 'Quais valores vocês querem que estejam presentes nas decisões do casal?',
+    date: { title: 'Histórias que formaram vocês', description: 'Escolham fotos ou músicas importantes e contem as histórias e valores que elas representam.' },
+  },
+  estilo: {
+    prompt: 'Como vocês podem equilibrar momentos juntos, rotina e tempo individual?',
+    date: { title: 'Um programa escolhido a dois', description: 'Cada pessoa escolhe uma parte do encontro: uma atividade e uma pausa para descansar juntos.' },
+  },
+  intimidade: {
+    prompt: 'Que gesto simples faz cada um se sentir amado e acolhido no dia a dia?',
+    date: { title: 'Encontro de carinho', description: 'Preparem uma noite sem telas com uma refeição simples, música favorita e elogios sinceros.' },
+  },
+  financas: {
+    prompt: 'Que plano ou experiência vale a pena priorizar juntos, respeitando os limites de cada um?',
+    date: { title: 'Planos sem pressão', description: 'Imaginem um passeio para o futuro e montem juntos uma versão que caiba no orçamento atual.' },
+  },
+  futuro: {
+    prompt: 'Qual sonho individual vocês gostariam de apoiar um no outro nos próximos meses?',
+    date: { title: 'Mapa de sonhos', description: 'Tomem algo gostoso e criem uma lista de planos a dois e individuais para o próximo ano.' },
   },
 }
 
@@ -161,5 +195,21 @@ export function buildReport(a: Partner, b: Partner): Report {
     categories: categoryResults,
     strengths,
     attention,
+  }
+}
+
+export function buildPremiumAnalysis(report: Report): PremiumAnalysis {
+  const areasToExplore = [...report.categories].sort((a, b) => a.score - b.score).slice(0, 3)
+  const conversationGuide = areasToExplore.map((category) => ({
+    category: category.label,
+    prompt: premiumGuidance[category.id].prompt,
+  }))
+  const dateIdeas = areasToExplore.map((category) => premiumGuidance[category.id].date)
+
+  return {
+    conversationGuide,
+    dateIdeas,
+    connectionChallenge:
+      'Durante sete dias, reservem dez minutos sem telas para compartilhar algo bom do dia e uma coisa que gostariam de viver juntos.',
   }
 }

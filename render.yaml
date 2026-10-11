@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: lovematch
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start --workspace=server
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: PIX_DONATION_KEY
+        sync: false
+      - key: PIX_DONATION_NAME
+        sync: false
+      - key: PIX_DONATION_CITY
+        sync: false

@@ -30,6 +30,12 @@ export interface QuestionInsight {
   answers: { name: string; value: number }[]
 }
 
+export interface PremiumAnalysis {
+  conversationGuide: { category: string; prompt: string }[]
+  dateIdeas: { title: string; description: string }[]
+  connectionChallenge: string
+}
+
 export interface Report {
   names: [string, string]
   overall: number
@@ -41,4 +47,16 @@ export interface Report {
   categories: { id: string; label: string; score: number; explanation: string }[]
   strengths: QuestionInsight[]
   attention: QuestionInsight[]
+  premium: {
+    status: 'not_started' | 'donation_confirmed'
+    pixKey: string | null
+    pixCopyPaste: string | null
+    pixConfigured: boolean
+    donationCents: number
+    analysis?: PremiumAnalysis
+  }
+}
+
+export interface DonationConfirmation {
+  confirmed: boolean
 }

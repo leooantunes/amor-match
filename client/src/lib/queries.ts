@@ -23,12 +23,21 @@ export const useReport = (code: string, partnerId: string | undefined, enabled: 
     queryKey: ['report', code],
     queryFn: () => api.report(code, partnerId!),
     enabled: enabled && !!partnerId,
+    refetchInterval: (q) => (q.state.data?.premium.status === 'donation_confirmed' ? false : 10_000),
   })
 
 export const useCreateSession = () => useMutation({ mutationFn: api.create })
 
 export const useJoinSession = () =>
   useMutation({ mutationFn: ({ code, name }: { code: string; name: string }) => api.join(code, name) })
+
+export const useConfirmPremiumDonation = (code: string, partnerId: string) => {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => api.confirmPremiumDonation(code, partnerId),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['report', code] }),
+  })
+}
 
 export const useSaveAnswer = (code: string, partnerId: string) => {
   const qc = useQueryClient()

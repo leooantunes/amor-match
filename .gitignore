@@ -3,3 +3,6 @@ dist
 server/data
 *.log
 data
+.env
+.env.*
+!.env.example

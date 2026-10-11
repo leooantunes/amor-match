@@ -18,8 +18,8 @@
   --color-gold: #b7791f;
   --color-success: #166534;
   --color-danger: #b91c1c;
-  --font-display: 'Georgia', 'Times New Roman', serif;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Aptos Display', 'Segoe UI', 'Trebuchet MS', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Aptos', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Roboto, sans-serif;
 }
 
 html {
@@ -29,12 +29,98 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+html[data-theme='romantic'] {
+  --color-love-50: #2b1d28;
+  --color-love-100: #382331;
+  --color-love-200: #503043;
+  --color-love-300: #75465d;
+  --color-love-400: #a25a75;
+  --color-love-500: #bd6b87;
+  --color-love-600: #dc91a8;
+  --color-love-700: #a84362;
+  --color-love-800: #efb5c7;
+  --color-love-900: #f8dce5;
+  --color-cream: #191219;
+  --color-ink: #f7eaf0;
+  --color-ink-soft: #cbb4c2;
+  --color-gold: #e5bf82;
+  --color-success: #86c89a;
+  --color-danger: #f29a90;
+  --color-white: #281d28;
+  color-scheme: dark;
+}
+
 body {
   min-height: 100dvh;
   background:
     radial-gradient(60rem 30rem at 100% -10%, var(--color-love-100), transparent 60%),
     radial-gradient(40rem 25rem at -10% 110%, var(--color-love-200), transparent 60%),
     var(--color-cream);
+}
+
+html[data-theme='romantic'] body {
+  background:
+    radial-gradient(60rem 30rem at 100% -10%, #49263a, transparent 60%),
+    radial-gradient(40rem 25rem at -10% 110%, #33202f, transparent 60%),
+    var(--color-cream);
+}
+
+html[data-theme='romantic'] .text-white {
+  color: #fff;
+}
+
+@media print {
+  @page {
+    margin: 1.5cm;
+  }
+
+  html[data-theme='romantic'] {
+    --color-love-50: #fff1f3;
+    --color-love-100: #ffe4e8;
+    --color-love-200: #fecdd6;
+    --color-love-300: #fda4b4;
+    --color-love-400: #fb7189;
+    --color-love-500: #f43f5e;
+    --color-love-600: #e11d48;
+    --color-love-700: #be123c;
+    --color-love-800: #9f1239;
+    --color-love-900: #881337;
+    --color-cream: #fff8f6;
+    --color-ink: #3b0a1a;
+    --color-ink-soft: #6b2a3d;
+    color-scheme: light;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    color: #211720 !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  header,
+  footer,
+  .report-actions {
+    display: none !important;
+  }
+
+  .report-content {
+    max-width: none !important;
+    gap: 1rem !important;
+    padding: 0 !important;
+  }
+
+  .report-content section {
+    break-inside: avoid;
+    border-color: #e8d5de !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+
+  .report-content .bg-love-50 {
+    background: #fff5f8 !important;
+  }
 }
 
 :focus-visible {
