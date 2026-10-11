@@ -110,8 +110,20 @@ function newCode(): string {
   return code
 }
 
-export function getSession(code: string): Session | undefined {
-  return sessions.get(code.toUpperCase())
+export async function getSession(code: string): Promise<Session | undefined> {
+  const normalizedCode = code.toUpperCase()
+  if (pool) {
+    const { rows } = await pool.query<{ session: Session }>(
+      `SELECT session FROM lovematch_sessions
+       WHERE code = $1 AND created_at > NOW() - INTERVAL '30 days'`,
+      [normalizedCode],
+    )
+    const session = rows[0]?.session
+    if (session) sessions.set(normalizedCode, session)
+    else sessions.delete(normalizedCode)
+    return session
+  }
+  return sessions.get(normalizedCode)
 }
 
 export function addPartner(session: Session, name: string): Partner {

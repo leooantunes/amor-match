@@ -43,8 +43,8 @@ function isFinished(p: Partner): boolean {
   })
 }
 
-function sessionFrom(req: Request): Session {
-  const session = getSession(String(req.params.code))
+async function sessionFrom(req: Request): Promise<Session> {
+  const session = await getSession(String(req.params.code))
   if (!session) throw new HttpError(404, 'Sala não encontrada. Confira o código.')
   return session
 }
@@ -80,15 +80,15 @@ app.post('/api/sessions', asyncRoute(async (req, res) => {
 
 app.post('/api/sessions/:code/join', asyncRoute(async (req, res) => {
   const { name } = nameSchema.parse(req.body)
-  const session = sessionFrom(req)
+  const session = await sessionFrom(req)
   if (session.partners.length >= 2) throw new HttpError(409, 'Esta sala já tem duas pessoas.')
   const partner = addPartner(session, name)
   await persist(session)
   res.status(201).json({ code: session.code, partnerId: partner.id })
 }))
 
-app.get('/api/sessions/:code', (req, res) => {
-  const session = sessionFrom(req)
+app.get('/api/sessions/:code', asyncRoute(async (req, res) => {
+  const session = await sessionFrom(req)
   const me = partnerFrom(req, session)
   const other = session.partners.find((p) => p.id !== me.id)
   res.json({
@@ -100,10 +100,10 @@ app.get('/api/sessions/:code', (req, res) => {
       : null,
     reportReady: session.partners.length === 2 && session.partners.every(isFinished),
   })
-})
+}))
 
 app.put('/api/sessions/:code/answers', asyncRoute(async (req, res) => {
-  const session = sessionFrom(req)
+  const session = await sessionFrom(req)
   const me = partnerFrom(req, session)
   const body = answerSchema.parse(req.body)
   const question = questionById.get(body.questionId)
@@ -114,8 +114,8 @@ app.put('/api/sessions/:code/answers', asyncRoute(async (req, res) => {
   res.json({ ok: true })
 }))
 
-app.get('/api/sessions/:code/report', (req, res) => {
-  const session = sessionFrom(req)
+app.get('/api/sessions/:code/report', asyncRoute(async (req, res) => {
+  const session = await sessionFrom(req)
   partnerFrom(req, session)
   if (session.partners.length < 2 || !session.partners.every(isFinished)) {
     throw new HttpError(409, 'O relatório fica pronto quando os dois terminarem.')
@@ -135,10 +135,10 @@ app.get('/api/sessions/:code/report', (req, res) => {
       ...(premiumUnlocked ? { analysis: buildPremiumAnalysis(report) } : {}),
     },
   })
-})
+}))
 
 app.post('/api/sessions/:code/premium/confirm-donation', asyncRoute(async (req, res) => {
-  const session = sessionFrom(req)
+  const session = await sessionFrom(req)
   const partner = partnerFrom(req, session)
   if (session.partners.length < 2 || !session.partners.every(isFinished)) {
     throw new HttpError(409, 'A análise Premium fica disponível quando os dois terminarem.')
