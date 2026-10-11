@@ -54,6 +54,7 @@ export function Report({ code, partnerId }: { code: string; partnerId: string })
   const { data, isPending, error, refetch } = useReport(code, partnerId, true)
   const [pixCopied, setPixCopied] = useState(false)
   const [pixCopyError, setPixCopyError] = useState(false)
+  const [shareStatus, setShareStatus] = useState('')
   const confirmDonation = useConfirmPremiumDonation(code, partnerId)
   if (isPending) return <Loading text={t.common.loading} />
   if (error || !data) {
@@ -68,6 +69,29 @@ export function Report({ code, partnerId }: { code: string; partnerId: string })
   const premiumPrice = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(
     data.premium.donationCents / 100,
   )
+  const shareMessage = t.report.shareMessage(data.names, data.overall, `${window.location.origin}/s/${code}`)
+
+  const shareOnInstagram = async () => {
+    if (typeof navigator.share === 'function') {
+      try {
+        await navigator.share({ title: t.report.shareTitle, text: shareMessage })
+        setShareStatus(t.report.shareSuccess)
+        return
+      } catch (error) {
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          setShareStatus(t.report.shareCancelled)
+          return
+        }
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareMessage)
+      setShareStatus(t.report.shareCopied)
+    } catch {
+      setShareStatus(t.report.shareCopyError)
+    }
+  }
 
   return (
     <div className="report-content space-y-6">
@@ -251,6 +275,25 @@ export function Report({ code, partnerId }: { code: string; partnerId: string })
 
       <p className="text-center text-sm text-ink-soft">{t.report.disclaimer}</p>
       <div className="report-actions flex flex-col justify-center gap-3 sm:flex-row">
+        <a
+          href={`https://wa.me/?text=${encodeURIComponent(shareMessage)}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-[#25D366] px-6 py-3 font-semibold text-white shadow-sm transition-colors hover:bg-[#1DA851]"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5" fill="currentColor">
+            <path d="M20.52 3.48A11.83 11.83 0 0 0 12.1 0C5.55 0 .22 5.33.22 11.9c0 2.1.55 4.15 1.6 5.96L.12 24l6.3-1.65a11.9 11.9 0 0 0 5.68 1.45h.01c6.55 0 11.88-5.34 11.88-11.9 0-3.18-1.24-6.17-3.47-8.42ZM12.1 21.78h-.01c-1.78 0-3.52-.48-5.03-1.39l-.36-.21-3.74.98 1-3.65-.24-.37a9.85 9.85 0 0 1-1.52-5.24c0-5.47 4.45-9.92 9.91-9.92 2.65 0 5.14 1.03 7.01 2.91a9.86 9.86 0 0 1 2.9 7.02c0 5.47-4.45 9.92-9.92 9.92Zm5.44-7.43c-.3-.15-1.76-.87-2.04-.97-.27-.1-.47-.15-.67.15-.2.3-.77.97-.95 1.17-.17.2-.35.22-.65.07-.3-.15-1.26-.46-2.4-1.47-.89-.79-1.49-1.76-1.67-2.06-.17-.3-.02-.46.13-.6.13-.13.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.03-.52-.07-.15-.67-1.62-.92-2.22-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.8.37-.28.3-1.04 1.02-1.04 2.49s1.07 2.89 1.22 3.09c.15.2 2.1 3.2 5.09 4.49.71.3 1.27.49 1.7.63.71.23 1.36.2 1.87.12.57-.08 1.76-.72 2.01-1.42.25-.7.25-1.3.18-1.42-.08-.13-.28-.2-.58-.35Z" />
+          </svg>
+          {t.report.shareWhatsApp}
+        </a>
+        <Button type="button" variant="secondary" onClick={() => void shareOnInstagram()}>
+          <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeWidth="2">
+            <rect x="3" y="3" width="18" height="18" rx="5" />
+            <circle cx="12" cy="12" r="4" />
+            <circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+          </svg>
+          {t.report.shareInstagram}
+        </Button>
         <Button type="button" variant="secondary" onClick={() => window.print()}>
           <svg viewBox="0 0 24 24" aria-hidden="true" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
@@ -262,6 +305,9 @@ export function Report({ code, partnerId }: { code: string; partnerId: string })
           {t.report.newTest}
         </Link>
       </div>
+      <p className="report-actions text-center text-sm text-ink-soft" role="status" aria-live="polite">
+        {shareStatus}
+      </p>
     </div>
   )
 }

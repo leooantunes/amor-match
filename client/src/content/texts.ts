@@ -67,6 +67,15 @@ export const t = {
     attention: 'Pontos para conversar',
     attentionEmpty: 'Nenhuma grande divergência. Parabéns!',
     downloadPdf: 'Salvar relatório em PDF',
+    shareTitle: 'Compartilhem o resultado',
+    shareWhatsApp: 'Compartilhar no WhatsApp',
+    shareInstagram: 'Compartilhar no Instagram',
+    shareSuccess: 'Compartilhamento concluído.',
+    shareCopied: 'Texto copiado! Cole no Instagram para compartilhar.',
+    shareCancelled: 'Compartilhamento cancelado.',
+    shareCopyError: 'Não foi possível compartilhar nem copiar o texto. Tente novamente.',
+    shareMessage: (names: [string, string], score: number, url: string) =>
+      `Nós, ${names[0]} e ${names[1]}, fizemos o teste LoveMatch! Nossa compatibilidade foi de ${score}%. Faça o teste com alguém especial: ${url}`,
     premium: {
       title: 'Análise Premium do casal',
       subtitle: 'Apoie a manutenção do LoveMatch e receba um guia personalizado para transformar o resultado em boas conversas e momentos a dois.',
