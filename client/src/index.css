@@ -1,0 +1,60 @@
+@import 'tailwindcss';
+
+/* Cores globais do tema. Use sempre os tokens (ex.: bg-love-600, text-ink). */
+@theme {
+  --color-love-50: #fff1f3;
+  --color-love-100: #ffe4e8;
+  --color-love-200: #fecdd6;
+  --color-love-300: #fda4b4;
+  --color-love-400: #fb7189;
+  --color-love-500: #f43f5e;
+  --color-love-600: #e11d48;
+  --color-love-700: #be123c;
+  --color-love-800: #9f1239;
+  --color-love-900: #881337;
+  --color-cream: #fff8f6;
+  --color-ink: #3b0a1a;
+  --color-ink-soft: #6b2a3d;
+  --color-gold: #b7791f;
+  --color-success: #166534;
+  --color-danger: #b91c1c;
+  --font-display: 'Georgia', 'Times New Roman', serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+html {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100dvh;
+  background:
+    radial-gradient(60rem 30rem at 100% -10%, var(--color-love-100), transparent 60%),
+    radial-gradient(40rem 25rem at -10% 110%, var(--color-love-200), transparent 60%),
+    var(--color-cream);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-love-800);
+  outline-offset: 3px;
+  border-radius: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@keyframes beat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.12); }
+}
+.animate-beat { animation: beat 1.6s ease-in-out infinite; }
