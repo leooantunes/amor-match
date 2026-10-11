@@ -13,7 +13,7 @@ O projeto pode ser publicado como um serviço web no Render, com PostgreSQL grat
 2. No [Render](https://render.com/), crie um Blueprint e conecte o repositório.
 3. O Render detectará `render.yaml` e solicitará as variáveis marcadas `sync: false`.
 4. Cole a URL do Neon em `DATABASE_URL`. A aplicação cria a tabela de sessões na inicialização.
-5. Para exibir o Pix de doação, informe `PIX_DONATION_KEY`, `PIX_DONATION_NAME` e `PIX_DONATION_CITY`. Essas variáveis podem ficar vazias se a doação ainda não estiver configurada.
+5. Para exibir o Pix de doação, informe `PIX_DONATION_KEY`, `PIX_DONATION_NAME` e `PIX_DONATION_CITY`. Em `PIX_DONATION_KEY`, use a chave Pix cadastrada no banco (CPF, e-mail, telefone ou chave aleatória), **não** o BR Code/“Pix Copia e Cola”. Essas variáveis podem ficar vazias se a doação ainda não estiver configurada.
 6. Inicie o deploy. O Render compila cliente e servidor e serve ambos pela mesma URL.
 
 Não coloque URLs de banco, chaves Pix ou outras credenciais no repositório. Configure-as somente no painel do Render. Sem `DATABASE_URL`, a aplicação recusa iniciar em produção para evitar perda das salas no disco temporário do serviço.
