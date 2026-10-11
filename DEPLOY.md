@@ -17,3 +17,16 @@ O projeto pode ser publicado como um serviço web no Render, com PostgreSQL grat
 6. Inicie o deploy. O Render compila cliente e servidor e serve ambos pela mesma URL.
 
 Não coloque URLs de banco, chaves Pix ou outras credenciais no repositório. Configure-as somente no painel do Render. Sem `DATABASE_URL`, a aplicação recusa iniciar em produção para evitar perda das salas no disco temporário do serviço.
+
+## Publicar o site na Vercel
+
+A Vercel hospeda o cliente Vite, enquanto a API e o banco continuam no Render e no Neon.
+
+1. Importe o repositório no [Vercel](https://vercel.com/) usando a raiz do repositório (`.`) como diretório do projeto.
+2. Selecione **Vite** como framework e configure:
+   - Install Command: `npm ci`
+   - Build Command: `npm run build -w client`
+   - Output Directory: `client/dist`
+3. O arquivo `vercel.json` encaminha `/api/*` para o serviço LoveMatch no Render e as demais rotas para o app de página única. Atualize o destino nesse arquivo caso o domínio do serviço Render mude.
+4. Faça o deploy. Não é necessário configurar `DATABASE_URL` nem as variáveis Pix no projeto Vercel; elas permanecem configuradas no Render.
+5. Valide `/api/health` no domínio Vercel e crie uma sala para confirmar que o frontend consegue usar a API.
