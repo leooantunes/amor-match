@@ -1,4 +1,4 @@
-import { categories, questionById, questions, SCALE_MAX, SCALE_MIN, type CategoryId } from './questions.js'
+import { categories, questionById, questionsForMode, SCALE_MAX, SCALE_MIN, type CategoryId, type QuestionMode } from './questions.js'
 import type { Partner } from './store.js'
 
 export interface CategoryResult {
@@ -109,13 +109,14 @@ function band(score: number): 'high' | 'mid' | 'low' {
   return score >= 75 ? 'high' : score >= 50 ? 'mid' : 'low'
 }
 
-export function buildReport(a: Partner, b: Partner): Report {
+export function buildReport(a: Partner, b: Partner, mode: QuestionMode = 'casais'): Report {
+  const activeQuestions = questionsForMode(mode)
   let weightSum = 0
   let scoreSum = 0
   const perCategory = new Map<CategoryId, { w: number; s: number }>()
   const diffs: { id: string; diff: number; weight: number }[] = []
 
-  for (const q of questions) {
+  for (const q of activeQuestions) {
     const aa = a.answers[q.id]
     const bb = b.answers[q.id]
     if (!aa || !bb) continue
@@ -134,7 +135,7 @@ export function buildReport(a: Partner, b: Partner): Report {
 
   // Sintonia: quão bem cada um previu a resposta do outro.
   const guessAccuracies: number[] = []
-  for (const q of questions) {
+  for (const q of activeQuestions) {
     if (!q.guess) continue
     const ga = a.answers[q.id]?.guess
     const gb = b.answers[q.id]?.guess

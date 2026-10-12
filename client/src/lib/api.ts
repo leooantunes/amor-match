@@ -1,5 +1,5 @@
 import { t } from '../content/texts'
-import type { Answer, Category, DonationConfirmation, Question, Report, SessionView } from './types'
+import type { Answer, Category, DonationConfirmation, Question, QuestionMode, Report, SessionView } from './types'
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -22,11 +22,24 @@ async function request<T>(path: string, options: { method?: string; body?: unkno
 }
 
 export const api = {
-  questions: () => request<{ categories: Category[]; questions: Question[] }>('/questions'),
-  create: (name: string) => request<{ code: string; partnerId: string }>('/sessions', { method: 'POST', body: { name } }),
+  questions: (mode: QuestionMode, code: string, partnerId: string, enabled: boolean) => {
+    if (!enabled) return Promise.resolve({ categories: [], questions: [] })
+    const query = new URLSearchParams({ mode })
+    if (mode === 'ficantes') query.set('code', code)
+    return request<{ categories: Category[]; questions: Question[] }>(`/questions?${query}`, { partnerId })
+  },
+  create: (name: string, mode: QuestionMode, adultConfirmed: boolean) =>
+    request<{ code: string; partnerId: string }>('/sessions', {
+      method: 'POST',
+      body: { name, mode, adultConfirmed },
+    }),
   join: (code: string, name: string) =>
     request<{ code: string; partnerId: string }>(`/sessions/${code}/join`, { method: 'POST', body: { name } }),
   session: (code: string, partnerId: string) => request<SessionView>(`/sessions/${code}`, { partnerId }),
+  setSessionMode: (code: string, partnerId: string, mode: QuestionMode) =>
+    request<{ mode: QuestionMode }>(`/sessions/${code}/mode`, { method: 'PUT', body: { mode }, partnerId }),
+  confirmAdult: (code: string, partnerId: string, confirmed: boolean) =>
+    request<{ confirmed: boolean }>(`/sessions/${code}/adult-confirmation`, { method: 'PUT', body: { confirmed }, partnerId }),
   answer: (code: string, partnerId: string, body: { questionId: string } & Answer) =>
     request<{ ok: true }>(`/sessions/${code}/answers`, { method: 'PUT', body, partnerId }),
   report: (code: string, partnerId: string) => request<Report>(`/sessions/${code}/report`, { partnerId }),

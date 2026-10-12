@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { Pool } from 'pg'
+import type { QuestionMode } from './questions.js'
 
 export interface Answer {
   value: number
@@ -12,12 +13,14 @@ export interface Partner {
   id: string
   name: string
   answers: Record<string, Answer>
+  adultConfirmed?: boolean
 }
 
 export interface Session {
   code: string
   createdAt: number
   partners: Partner[]
+  mode?: QuestionMode
   premiumDonation?: {
     status: 'confirmed'
     confirmedByPartnerId: string

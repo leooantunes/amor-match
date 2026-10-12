@@ -4,11 +4,14 @@ export interface Category {
   description: string
 }
 
+export type QuestionMode = 'casais' | 'ficantes'
+
 export interface Question {
   id: string
   category: string
   text: string
   weight: number
+  mode?: QuestionMode
   guess?: boolean
 }
 
@@ -20,8 +23,9 @@ export interface Answer {
 export interface SessionView {
   code: string
   total: number
-  me: { name: string; answered: number; finished: boolean; answers: Record<string, Answer> }
-  partner: { name: string; answered: number; finished: boolean } | null
+  mode: QuestionMode
+  me: { name: string; answered: number; finished: boolean; answers: Record<string, Answer>; adultConfirmed: boolean }
+  partner: { name: string; answered: number; finished: boolean; adultConfirmed: boolean } | null
   reportReady: boolean
 }
 

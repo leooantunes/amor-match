@@ -2,8 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Button, Card, ErrorMessage, ProgressBar } from '../components/ui'
 import { ScaleInput } from '../components/ScaleInput'
 import { t } from '../content/texts'
-import { useQuestions, useSaveAnswer } from '../lib/queries'
-import type { Question, SessionView } from '../lib/types'
+import { useConfirmAdult, useQuestions, useSaveAnswer, useSetSessionMode } from '../lib/queries'
+import type { Question, QuestionMode, SessionView } from '../lib/types'
 
 const isComplete = (q: Question, a: SessionView['me']['answers'][string] | undefined) =>
   !!a && (!q.guess || a.guess !== undefined)
@@ -68,33 +68,88 @@ function Step({
 }
 
 export function Quiz({ view, partnerId }: { view: SessionView; partnerId: string }) {
-  const { data } = useQuestions()
+  const canAccessQuestions =
+    view.mode === 'casais' || (view.me.adultConfirmed && !!view.partner?.adultConfirmed)
+  const { data } = useQuestions(view.mode, view.code, partnerId, canAccessQuestions)
   const save = useSaveAnswer(view.code, partnerId)
-  const questions = data?.questions ?? []
+  const setMode = useSetSessionMode(view.code, partnerId)
+  const confirmAdult = useConfirmAdult(view.code, partnerId)
+  const questions = (data?.questions ?? []).filter((q) => (q.mode ?? 'casais') === view.mode)
   const [index, setIndex] = useState<number | null>(null)
 
+  const modeLocked = view.me.answered > 0 || (view.partner?.answered ?? 0) > 0
   const start = Math.max(0, questions.findIndex((q) => !isComplete(q, view.me.answers[q.id])))
   const current = index ?? start
   const question = questions[current]
-  if (!question) return null
+  const changeMode = (mode: QuestionMode) => {
+    if (mode !== view.mode) setMode.mutate(mode)
+  }
 
   return (
-    <Step
-      key={question.id}
-      question={question}
-      index={current}
-      total={questions.length}
-      partnerName={view.partner?.name ?? ''}
-      initial={view.me.answers[question.id]}
-      saving={save.isPending}
-      error={save.error?.message}
-      onBack={current > 0 ? () => setIndex(current - 1) : undefined}
-      onNext={(value, guess) =>
-        save.mutate(
-          { questionId: question.id, value, ...(question.guess ? { guess } : {}) },
-          { onSuccess: () => setIndex(Math.min(current + 1, questions.length - 1)) },
-        )
-      }
-    />
+    <div className="space-y-5">
+      <Card>
+        <h2 className="font-display text-xl font-bold text-love-900">{t.quiz.modeTitle}</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2" role="group" aria-label={t.quiz.modeTitle}>
+          <Button
+            type="button"
+            variant={view.mode === 'casais' ? 'primary' : 'secondary'}
+            aria-pressed={view.mode === 'casais'}
+            disabled={modeLocked || setMode.isPending}
+            onClick={() => changeMode('casais')}
+          >
+            {t.quiz.couplesMode}
+          </Button>
+          <Button
+            type="button"
+            variant={view.mode === 'ficantes' ? 'primary' : 'secondary'}
+            aria-pressed={view.mode === 'ficantes'}
+            disabled={modeLocked || setMode.isPending || !view.me.adultConfirmed || !view.partner?.adultConfirmed}
+            onClick={() => changeMode('ficantes')}
+          >
+            {t.quiz.flingMode}
+          </Button>
+        </div>
+        <p className="mt-3 text-sm text-ink-soft">{t.quiz.modeAdultNote}</p>
+        <label className="mt-3 flex min-h-12 cursor-pointer items-center gap-3 text-sm font-medium text-ink">
+          <input
+            type="checkbox"
+            checked={view.me.adultConfirmed}
+            disabled={confirmAdult.isPending || modeLocked}
+            onChange={(event) => confirmAdult.mutate(event.target.checked)}
+            className="h-5 w-5 accent-love-700"
+          />
+          {t.quiz.modeAdultLabel}
+        </label>
+        {view.me.adultConfirmed && !view.partner?.adultConfirmed && (
+          <p className="mt-2 text-sm text-ink-soft" role="status">{t.quiz.waitingAdultConfirmation}</p>
+        )}
+        {view.mode === 'ficantes' && !view.me.adultConfirmed && (
+          <p className="mt-2 text-sm text-ink-soft" role="status">{t.quiz.confirmAdultFirst}</p>
+        )}
+        {view.mode === 'ficantes' && <p className="mt-2 text-sm text-ink-soft">{t.quiz.adultNote}</p>}
+        {modeLocked && <p className="mt-2 text-sm text-ink-soft">{t.quiz.modeLocked}</p>}
+        <ErrorMessage message={setMode.error?.message ?? confirmAdult.error?.message} />
+      </Card>
+      {setMode.isPending && <p role="status" className="text-center text-sm text-ink-soft">{t.quiz.changingMode}</p>}
+      {question && (view.mode !== 'ficantes' || (view.me.adultConfirmed && view.partner?.adultConfirmed)) && (
+        <Step
+          key={question.id}
+          question={question}
+          index={current}
+          total={questions.length}
+          partnerName={view.partner?.name ?? ''}
+          initial={view.me.answers[question.id]}
+          saving={save.isPending}
+          error={save.error?.message}
+          onBack={current > 0 ? () => setIndex(current - 1) : undefined}
+          onNext={(value, guess) =>
+            save.mutate(
+              { questionId: question.id, value, ...(question.guess ? { guess } : {}) },
+              { onSuccess: () => setIndex(Math.min(current + 1, questions.length - 1)) },
+            )
+          }
+        />
+      )}
+    </div>
   )
 }
